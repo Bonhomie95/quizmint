@@ -73,7 +73,7 @@ export default function QuizScreen() {
   useEffect(() => {
     const loadQuestions = async () => {
       try {
-        const { data } = await axios.post('/generate-questions', { category });
+        const { data } = await axios.post('/quiz/generate', { category });
         setQuestions(data.questions);
         setLoadingQuestion(false);
       } catch (err) {

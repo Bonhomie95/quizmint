@@ -1,8 +1,7 @@
 const express = require('express');
-const { generateQuestions } = require('../controllers/quizController');
-const authMiddleware = require('../middleware/auth');
 const router = express.Router();
+const { generateQuestions } = require('../controllers/quizController');
 
-router.post('/', authMiddleware, generateQuestions);
+router.post('/generate', generateQuestions);
 
 module.exports = router;

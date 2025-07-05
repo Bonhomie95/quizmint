@@ -1,20 +1,28 @@
 const OpenAI = require('openai');
+const QuizQuestion = require('../models/QuizQuestion');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 exports.generateQuestions = async (req, res) => {
   const { category } = req.body;
 
-  const difficulties = [
-    { level: 'easy', count: 3 },
-    { level: 'medium', count: 3 },
-    { level: 'hard', count: 3 },
-    { level: 'hardest', count: 1 },
-  ];
+  try {
+    const cached = await QuizQuestion.find({ category }).limit(10);
 
-  let allQuestions = [];
+    if (cached.length === 10) {
+      return res.json({ questions: cached });
+    }
 
-  for (const { level, count } of difficulties) {
-    const prompt = `
+    // Else: generate and cache
+    const difficulties = [
+      { level: 'easy', count: 3 },
+      { level: 'medium', count: 4 },
+      { level: 'hard', count: 3 },
+    ];
+
+    let allQuestions = [];
+
+    for (const { level, count } of difficulties) {
+      const prompt = `
 Generate ${count} ${level} difficulty multiple choice questions in the category "${category}".
 Each question should include:
 - question
@@ -22,7 +30,7 @@ Each question should include:
 - correct answer
 - hint
 
-Format:
+Return ONLY JSON array in this format:
 [
   {
     "question": "...",
@@ -31,10 +39,8 @@ Format:
     "hint": "..."
   }
 ]
-Only return JSON array.
 `;
 
-    try {
       const aiRes = await openai.chat.completions.create({
         model: 'gpt-4',
         messages: [{ role: 'user', content: prompt }],
@@ -42,12 +48,20 @@ Only return JSON array.
 
       const content = aiRes.choices[0].message.content;
       const parsed = JSON.parse(content);
-      allQuestions.push(...parsed);
-    } catch (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to generate questions' });
-    }
-  }
 
-  res.json({ questions: allQuestions });
+      const withMeta = parsed.map((q) => ({
+        ...q,
+        category,
+        difficulty: level,
+      }));
+
+      await QuizQuestion.insertMany(withMeta);
+      allQuestions.push(...withMeta);
+    }
+
+    res.json({ questions: allQuestions });
+  } catch (err) {
+    console.error('❌ Error:', err);
+    res.status(500).json({ error: 'Failed to generate or fetch questions' });
+  }
 };
