@@ -1,8 +1,8 @@
 import User from '../models/User.js';
 import Session from '../models/Session.js';
 import CoinTransaction from '../models/CoinTransaction.js';
-// const CoinTransaction = require('../models/CoinTransaction');
 import { isNewWeek, isNewMonth } from '../utils/date.js';
+import { getUserTier } from '../utils/tier.js';
 
 export const claimStreak = async (req, res) => {
   const user = await User.findById(req.user.id);
@@ -17,23 +17,34 @@ export const claimStreak = async (req, res) => {
   const lastClaimDate = new Date(user.lastStreakDate || 0);
   const hoursSinceLast = (now - lastClaimDate) / 36e5;
 
+  // Reset if missed more than 48 hours
   if (hoursSinceLast > 48) {
-    // Reset streak if user missed 2 days
     user.streak = 1;
   } else {
     user.streak += 1;
   }
 
-  // Streak milestone bonus logic
-  let bonus = 100;
-  if (user.streak === 7) bonus = 500;
-  if (user.streak === 15) bonus = 1000;
-  if (user.streak === 30) bonus = 5000;
+  // Base reward
+  let base = 100;
 
+  // Multiplier based on streak day
+  let multiplier = 1;
+  if (user.streak >= 30) multiplier = 3;
+  else if (user.streak >= 20) multiplier = 2.5;
+  else if (user.streak >= 10) multiplier = 2;
+  else if (user.streak >= 5) multiplier = 1.3;
+
+  // Streak milestone bonus (optional, stacked on multiplier)
+  let milestoneBonus = 0;
+  if (user.streak === 7) milestoneBonus = 500;
+  if (user.streak === 15) milestoneBonus = 1000;
+  if (user.streak === 30) milestoneBonus = 5000;
+
+  const bonus = Math.floor(base * multiplier) + milestoneBonus;
   user.coins += bonus;
   user.lastStreakDate = now;
 
-  // Reset streak if milestone is hit (optional for Day 30)
+  // Optional: Reset streak after Day 30
   if (user.streak >= 30) {
     user.streak = 1;
   }
@@ -52,9 +63,7 @@ export const claimStreak = async (req, res) => {
     streak: user.streak,
     coins: user.coins,
     bonus,
-    message: `+${bonus} coins earned for Day ${
-      user.streak === 1 ? 30 : user.streak - 1
-    }`,
+    message: `+${bonus} coins earned for Day ${user.streak}`,
   });
 };
 
@@ -70,11 +79,12 @@ export const useHint = async (req, res) => {
 export const saveSession = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
     const today = new Date();
 
-    // Daily session reset if new day
-    const last = user.lastSessionDate?.toDateString();
-    if (last !== today.toDateString()) {
+    // Reset daily session count if it's a new day
+    if (user.lastSessionDate?.toDateString() !== today.toDateString()) {
       user.dailySessions = 0;
       user.lastSessionDate = today;
     }
@@ -87,36 +97,59 @@ export const saveSession = async (req, res) => {
 
     const { score, total, category, usedHints } = req.body;
 
-    // 🧮 Points logic
+    // 🎯 Points and Coins
     const pointsEarned = score * 100;
     const bonus = score === total ? 1000 : 0;
     const totalPoints = pointsEarned + bonus;
+    const earnedCoins = score * 10;
 
-    // 💰 Coins = 10 coins per correct
-    user.coins += score * 10;
+    user.coins += earnedCoins;
+    user.allTimePoints = (user.allTimePoints || 0) + totalPoints;
+    user.weeklyPoints = (user.weeklyPoints || 0) + totalPoints;
+    user.monthlyPoints = (user.monthlyPoints || 0) + totalPoints;
+    user.dailySessions += 1;
 
-    // 🗓️ Weekly and Monthly reset logic
+    // Reset weekly/monthly if needed
     const now = new Date();
-
     if (isNewWeek(user.lastWeeklyUpdate, now)) {
-      user.weeklyPoints = 0;
+      user.weeklyPoints = totalPoints;
       user.lastWeeklyUpdate = now;
     }
 
     if (isNewMonth(user.lastMonthlyUpdate, now)) {
-      user.monthlyPoints = 0;
+      user.monthlyPoints = totalPoints;
       user.lastMonthlyUpdate = now;
     }
 
-    // 📈 Update all points
-    user.allTimePoints = (user.allTimePoints || 0) + totalPoints;
-    user.weeklyPoints = (user.weeklyPoints || 0) + totalPoints;
-    user.monthlyPoints = (user.monthlyPoints || 0) + totalPoints;
+    // 🧠 Update total quizzes and correct answers for tier tracking
+    user.totalGames = (user.totalGames || 0) + 1;
+    user.totalCorrect = (user.totalCorrect || 0) + score;
 
-    user.dailySessions += 1;
+    if (!usedHints) {
+      user.gamesWithoutHints = (user.gamesWithoutHints || 0) + 1;
+      user.correctWithoutHints = (user.correctWithoutHints || 0) + score;
+    }
+
+    // 🧮 Win rates
+    const winRate = user.totalCorrect / (user.totalGames || 1);
+    const winRateWithoutHints =
+      user.correctWithoutHints / (user.gamesWithoutHints || 1);
+
+    user.winRate = winRate;
+    user.winRateWithoutHints = winRateWithoutHints;
+
+    // 🏆 Tier
+    const { tier, emoji, color } = getUserTier({
+      allTimePoints: user.allTimePoints,
+      winRate,
+      winRateWithoutHints,
+    });
+
+    user.tier = { level: tier, emoji, color };
+
     await user.save();
 
-    // 📦 Save session
+    // 💾 Save session log
     await Session.create({
       userId: user._id,
       category,
@@ -126,10 +159,12 @@ export const saveSession = async (req, res) => {
       pointsEarned: totalPoints,
     });
 
-    res.json({
+    return res.json({
       message: 'Session saved',
       totalPoints,
       updatedPoints: user.allTimePoints,
+      tier: user.tier,
+      coins: user.coins,
     });
   } catch (err) {
     console.error(err);

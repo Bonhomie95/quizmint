@@ -18,6 +18,13 @@ const userSchema = new mongoose.Schema({
   dailySessions: { type: Number, default: 0 },
   lastSessionDate: { type: Date },
   allTimePoints: { type: Number, default: 0 },
+  winRate: { type: Number, default: 0 },
+  winRateWithoutHints: { type: Number, default: 0 },
+  tier: {
+    level: { type: String, default: 'Bronze' },
+    emoji: { type: String, default: '🥉' },
+    color: { type: String, default: '#cd7f32' },
+  },
   weeklyPoints: { type: Number, default: 0 },
   monthlyPoints: { type: Number, default: 0 },
   lastWeeklyUpdate: Date,

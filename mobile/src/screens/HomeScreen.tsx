@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -14,10 +14,12 @@ import { useUser } from '../store/useUser';
 import { useNavigation } from '@react-navigation/native';
 import axios from '../api/axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import StreakPreviewModal from '../components/StreakPreviewModal';
 
 export default function HomeScreen() {
   const { user, setUser } = useUser();
   const navigation = useNavigation();
+  const [showPreview, setShowPreview] = useState(false);
 
   const fallbackAvatar = 'https://i.pravatar.cc/150?u=guest';
   const fallbackUsername = 'Guest' + Math.floor(Math.random() * 100000);
@@ -54,6 +56,12 @@ export default function HomeScreen() {
       console.warn('❌ Failed to initialize user:', err);
     }
   };
+
+  useEffect(() => {
+    if (user?.streak === 1) {
+      setShowPreview(true);
+    }
+  }, [user?.streak]);
 
   useEffect(() => {
     checkForReferral().finally(() => bootstrap());
@@ -136,8 +144,21 @@ export default function HomeScreen() {
           >
             <Text style={styles.glassText}>🪙 Reward History</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setShowPreview(true)}
+            style={{ marginTop: 10 }}
+          >
+            <Text style={{ color: '#4f46e5', textAlign: 'center' }}>
+              📈 View Streak Rewards
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
+      <StreakPreviewModal
+        visible={showPreview}
+        onClose={() => setShowPreview(false)}
+        currentDay={user?.streak || 0}
+      />
     </SafeAreaView>
   );
 }

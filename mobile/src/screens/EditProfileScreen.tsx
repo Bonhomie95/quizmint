@@ -10,7 +10,7 @@ import {
   FlatList,
   StyleSheet,
 } from 'react-native';
-import {Filter} from 'bad-words';
+import { Filter } from 'bad-words';
 import { useUser } from '../store/useUser';
 import axios from 'axios';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -106,6 +106,9 @@ export default function EditProfileScreen() {
     <SafeAreaView style={{ padding: 20 }}>
       <UserHeader />
       <Text style={styles.title}>✍️ Edit Profile</Text>
+      <Text style={{ fontSize: 16, color: user.tier?.color }}>
+        Tier {user.tier?.level} — {user.tier?.emoji}
+      </Text>
 
       <TextInput
         placeholder="Enter username"

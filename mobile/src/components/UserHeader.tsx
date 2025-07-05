@@ -7,10 +7,19 @@ export default function UserHeader() {
   if (!user) return null;
 
   return (
-    <View style={styles.container}>
-      <Image source={{ uri: user.avatar }} style={styles.avatar} />
-      <Text style={styles.username}>{user.username}</Text>
-    </View>
+    <View style={{ 
+  borderWidth: 3, 
+  borderColor: user.tier?.color || '#d1d5db', 
+  borderRadius: 100,
+  padding: 3 
+}}>
+  <Image source={{ uri: user.avatar }} style={{ width: 80, height: 80, borderRadius: 100 }} />
+  <Text style={{ position: 'absolute', bottom: -8, right: -8 }}>
+    {user.tier?.emoji || '🥚'}
+  </Text>
+  <Text style={styles.username}>{user.username}</Text>
+</View>
+
   );
 }
 
