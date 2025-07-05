@@ -1,0 +1,19 @@
+{
+  "Geography": [
+    { "question": "What is the capital of Nigeria?", "options": ["Lagos", "Abuja", "Kano", "Ibadan"], "answer": "Abuja", "hint": "It's in the center of Nigeria." },
+    { "question": "Which continent is Kenya in?", "options": ["Asia", "Europe", "Africa", "Australia"], "answer": "Africa", "hint": "Same as Nigeria" },
+    { "question": "What is the largest country in Africa by area?", "options": ["Nigeria", "Sudan", "Algeria", "South Africa"], "answer": "Algeria", "hint": "It's in North Africa." },
+    { "question": "Which river is the longest in Africa?", "options": ["Nile", "Congo", "Zambezi", "Niger"], "answer": "Nile", "hint": "It flows through Egypt." },
+    { "question": "What is the smallest country in Africa?", "options": ["Seychelles", "Gambia", "Djibouti", "Equatorial Guinea"], "answer": "Seychelles", "hint": "It's an island nation." }
+  ],
+  "History": [
+    { "question": "Who was Nigeria's first president?", "options": ["Obasanjo", "Nnamdi Azikiwe", "Buhari", "Awolowo"], "answer": "Nnamdi Azikiwe", "hint": "Zik of Africa" },
+    { "question": "When did Nigeria gain independence?", "options": ["1960", "1970", "1980", "1990"], "answer": "1960", "hint": "Year of independence from Britain" },
+    { "question": "Who was the first military ruler of Nigeria?", "options": ["Buhari", "Ibrahim Babangida", "Yakubu Gowon", "Aguiyi-Ironsi"], "answer": "Aguiyi-Ironsi", "hint": "He ruled after the first coup" },
+    { "question": "What year did the Nigerian Civil War end?", "options": ["1970", "1967", "1975", "1980"], "answer": "1970", "hint": "It ended with Biafra's surrender" }
+    
+  ],
+  "Puzzle": [],
+  "Science": [],
+  "Logic": []
+}
