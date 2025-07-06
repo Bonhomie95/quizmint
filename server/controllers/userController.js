@@ -29,10 +29,12 @@ exports.getProfile = async (req, res) => {
     );
 
     if (!user) {
+      console.error('❌ User not found:', req.user.id);
       return res.status(404).json({ message: 'User not found' });
     }
 
     res.json({ user });
+    console.log('✅ Profile fetched successfully:', user);
   } catch (error) {
     console.error('❌ Error fetching profile:', error);
     res.status(500).json({ message: 'Server error while fetching profile' });

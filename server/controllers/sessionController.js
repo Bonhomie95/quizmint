@@ -1,8 +1,24 @@
 import User from '../models/User.js';
+import MysteryBox from '../models/MysteryBox.js';
 import Session from '../models/Session.js';
 import CoinTransaction from '../models/CoinTransaction.js';
 import { isNewWeek, isNewMonth } from '../utils/date.js';
 import { getUserTier } from '../utils/tier.js';
+
+function getUnlockTime(type) {
+  const now = new Date();
+  if (type === 'small') return new Date(now.getTime() + 3 * 60 * 60 * 1000);
+  if (type === 'medium') return new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  if (type === 'big') return new Date(now.getTime() + 12 * 60 * 60 * 1000);
+}
+
+async function assignMysteryBox(userId, type) {
+  await MysteryBox.create({
+    userId,
+    boxType: type,
+    unlockAt: getUnlockTime(type),
+  });
+}
 
 export const claimStreak = async (req, res) => {
   const user = await User.findById(req.user.id);
@@ -83,7 +99,7 @@ export const saveSession = async (req, res) => {
 
     const today = new Date();
 
-    // Reset daily session count if it's a new day
+    // 🔁 Daily session reset
     if (user.lastSessionDate?.toDateString() !== today.toDateString()) {
       user.dailySessions = 0;
       user.lastSessionDate = today;
@@ -109,19 +125,18 @@ export const saveSession = async (req, res) => {
     user.monthlyPoints = (user.monthlyPoints || 0) + totalPoints;
     user.dailySessions += 1;
 
-    // Reset weekly/monthly if needed
+    // 🔁 Weekly / Monthly reset
     const now = new Date();
     if (isNewWeek(user.lastWeeklyUpdate, now)) {
       user.weeklyPoints = totalPoints;
       user.lastWeeklyUpdate = now;
     }
-
     if (isNewMonth(user.lastMonthlyUpdate, now)) {
       user.monthlyPoints = totalPoints;
       user.lastMonthlyUpdate = now;
     }
 
-    // 🧠 Update total quizzes and correct answers for tier tracking
+    // 🧠 Update stats for tier
     user.totalGames = (user.totalGames || 0) + 1;
     user.totalCorrect = (user.totalCorrect || 0) + score;
 
@@ -130,7 +145,7 @@ export const saveSession = async (req, res) => {
       user.correctWithoutHints = (user.correctWithoutHints || 0) + score;
     }
 
-    // 🧮 Win rates
+    // 🧮 Calculate Win Rate
     const winRate = user.totalCorrect / (user.totalGames || 1);
     const winRateWithoutHints =
       user.correctWithoutHints / (user.gamesWithoutHints || 1);
@@ -138,14 +153,39 @@ export const saveSession = async (req, res) => {
     user.winRate = winRate;
     user.winRateWithoutHints = winRateWithoutHints;
 
-    // 🏆 Tier
+    // 🏆 Tier Calculation
+    const previousTier = user.tier?.level || 0;
     const { tier, emoji, color } = getUserTier({
       allTimePoints: user.allTimePoints,
       winRate,
       winRateWithoutHints,
     });
-
     user.tier = { level: tier, emoji, color };
+
+    // 🎁 Check Mystery Box eligibility
+    // (1) Win streak reward
+    if (score === total) {
+      user.streak = (user.streak || 0) + 1;
+      if (user.streak === 10) {
+        await assignMysteryBox(user._id, 'small');
+      }
+    } else {
+      user.streak = 0; // Reset if not perfect
+    }
+
+    // (2) Tier increase check
+    const hoursSinceTierUp = (now - new Date(user.lastTierUp || 0)) / 36e5;
+
+    const tierDiff = tier - (user.lastTierLevel || 0);
+    if (tierDiff === 1 && hoursSinceTierUp <= 48) {
+      await assignMysteryBox(user._id, 'medium');
+    }
+    if (tierDiff >= 2 && hoursSinceTierUp <= 72) {
+      await assignMysteryBox(user._id, 'big');
+    }
+
+    user.lastTierUp = now;
+    user.lastTierLevel = tier;
 
     await user.save();
 

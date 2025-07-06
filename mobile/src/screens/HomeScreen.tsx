@@ -84,9 +84,8 @@ export default function HomeScreen() {
     }
   };
 
-  // ✅ Share-to-earn logic
   const shareApp = async () => {
-    const message = `🔥 Play QuizMint & earn crypto!\nUse my invite: https://quizmint.app?ref=${user?.uuid}`;
+    const message = `🔥 Play QuizMint & earn crypto!\nUse my invite: https://quizmint.app?ref=${user?._id}`;
 
     try {
       await Share.share({
@@ -151,6 +150,12 @@ export default function HomeScreen() {
             <Text style={{ color: '#4f46e5', textAlign: 'center' }}>
               📈 View Streak Rewards
             </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('MysteryBox' as never)}
+            style={styles.glassButtonStyle}
+          >
+            <Text style={styles.glassText}>🎁 Mystery Box</Text>
           </TouchableOpacity>
         </View>
       </View>

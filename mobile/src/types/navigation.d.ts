@@ -9,4 +9,5 @@ export type RootStackParamList = {
   Leaderboard: undefined;
   Quiz: { category: string };
   RewardHistory: undefined;
+  MysteryBox: undefined;
 };

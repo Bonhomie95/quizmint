@@ -3,15 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { persist } from 'zustand/middleware';
 import { User } from '../types/user';
 
-// export interface User {
-//   _id?: string;
-//   username: string;
-//   avatar: string;
-//   coins: number;
-//   streak: number;
-//   uuid?: string;
-//   wallet?: string;
-// }
 
 type UserState = {
   user: User | null;
@@ -31,6 +22,7 @@ export const useUser = create<UserState>()(
         streak: 0,
         highScore: 0,
         allTimePoints: 0,
+        uuid: "",
       },
       setUser: (user) => set({ user }),
     }),

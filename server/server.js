@@ -14,6 +14,8 @@ app.use('/api/user', require('./routes/userRoutes'));
 app.use('/api/leaderboard', require('./routes/leaderboardRoutes'));
 app.use('/api/session', require('./routes/sessionRoutes'));
 app.use('/api/quiz', require('./routes/quizRoutes'));
+app.use('/api/box', require('./routes/boxRoutes'));
+
 
 app.listen(process.env.PORT, () =>
   console.log(`Server running on port ${process.env.PORT}`)
