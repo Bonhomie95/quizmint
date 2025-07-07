@@ -27,18 +27,13 @@ export default function RootNavigator() {
       <Stack.Screen name="CategorySelect" component={CategorySelectScreen} />
       <Stack.Screen name="Quiz" component={QuizScreen} />
       <Stack.Screen name="Backup" component={BackupScreen} />
-      {/* <Stack.Screen name="Wallet" component={WalletScreen} />
-      <Stack.Screen name="SetPIN" component={SetPinScreen} /> */}
+      <Stack.Screen name="Wallet" component={WalletScreen} />
+      <Stack.Screen name="SetPIN" component={SetPinScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
       <Stack.Screen name="RewardHistory" component={RewardHistoryScreen} />
       <Stack.Screen name="MysteryBox" component={MysteryBoxScreen} />
-      {token && user?.pin ? (
-        <Stack.Screen name="Wallet" component={WalletScreen} />
-      ) : (
-        <Stack.Screen name="SetPIN" component={SetPinScreen} />
-      )}
     </Stack.Navigator>
   );
 }

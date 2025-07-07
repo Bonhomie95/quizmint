@@ -12,6 +12,9 @@ const questionSchema = new mongoose.Schema(
     options: [String],
     answer: String,
     hint: String,
+
+    usedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // ✅ Track users who’ve seen it
+    usedCount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

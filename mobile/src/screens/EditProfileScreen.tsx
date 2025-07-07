@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Filter } from 'bad-words';
 import { useUser } from '../store/useUser';
-import axios from 'axios';
+import axios from '../api/axios';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
@@ -36,34 +36,33 @@ export default function EditProfileScreen() {
   const [avatar, setAvatar] = useState(user?.avatar || '');
 
   const filter = new Filter();
+
   const updateProfile = async () => {
     if (!username || !avatar) {
       Alert.alert('❌ Error', 'Username and avatar are required');
       return;
     }
+
     if (filter.isProfane(username)) {
       Alert.alert('❌ Inappropriate username');
       return;
     }
+
     if (username.length < 3 || username.length > 50) {
       Alert.alert('❌ Error', 'Username must be between 3 and 50 characters');
       return;
     }
-    if (!user?.uuid) {
-      Alert.alert('Missing user token.');
+
+    if (!user) {
+      Alert.alert('User not found in store.');
       return;
     }
 
     try {
-      const { data } = await axios.patch(
-        '/user/update-profile',
-        { username, avatar },
-        {
-          headers: {
-            Authorization: `Bearer ${user.uuid}`, // ✅ send UUID as Bearer token
-          },
-        }
-      );
+      const { data } = await axios.patch('/user/update-profile', {
+        username,
+        avatar,
+      });
 
       setUser({ ...user, username: data.username, avatar: data.avatar });
       Alert.alert('✅ Profile updated');

@@ -44,16 +44,20 @@ export default function HomeScreen() {
         const endpoint = ref ? `/auth/register?ref=${ref}` : '/auth/register';
 
         const { data } = await axios.post(endpoint);
+
         await AsyncStorage.setItem('auth_token', data.token);
         setUser(data.user);
         console.log('✅ New user registered:', data.user);
       } else {
+        // token already saved, axios interceptor will handle Authorization
         const { data } = await axios.get('/user/me');
         setUser(data.user);
         console.log('✅ Existing user loaded:', data.user);
       }
     } catch (err) {
       console.warn('❌ Failed to initialize user:', err);
+      await AsyncStorage.removeItem('auth_token'); // remove malformed/expired
+      setUser(null);
     }
   };
 

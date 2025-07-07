@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,12 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
-import axios from 'axios';
+import axios from '../api/axios';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Animatable from 'react-native-animatable';
 import UserHeader from '../components/UserHeader';
 import { useLeaderboard } from '../store/useLeaderboard';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface Player {
   username: string;
@@ -31,10 +32,15 @@ export default function LeaderboardScreen() {
   const [loading, setLoading] = useState(true);
   const { weekly, monthly, setLeaderboard } = useLeaderboard();
 
-  useEffect(() => {
-    fetchLeaderboard();
-  }, [range]);
+  // useEffect(() => {
+  //   fetchLeaderboard();
+  // }, [range]);
 
+  useFocusEffect(
+  useCallback(() => {
+    fetchLeaderboard();
+  }, [range])
+);
   const fetchLeaderboard = async () => {
     try {
       setLoading(true);

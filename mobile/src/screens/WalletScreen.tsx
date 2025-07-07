@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text } from 'react-native';
+import { TextInput, Button, Text } from 'react-native';
 import axios from '../api/axios';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import UserHeader from '../components/UserHeader';

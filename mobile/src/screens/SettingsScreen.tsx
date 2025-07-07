@@ -35,7 +35,7 @@ export default function SettingsScreen() {
         onPress={() => navigation.navigate('Backup' as never)}
         style={btnStyle}
       >
-        <Text>🧬 Backup Game (Optional)</Text>
+        <Text>🧬 Backup/Restore Game (Optional)</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );

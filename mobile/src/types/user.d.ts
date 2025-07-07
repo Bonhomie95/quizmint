@@ -14,7 +14,9 @@ export interface User {
     level: number;
     emoji: string;
     color: string;
-  };}
+  };
+  hasPin?: boolean;
+}
 export interface UserWithPin extends User {
   pinHash: string;
   wallet: string;

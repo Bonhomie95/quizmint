@@ -3,7 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { persist } from 'zustand/middleware';
 import { User } from '../types/user';
 
-
 type UserState = {
   user: User | null;
   setUser: (u: User) => void;
@@ -22,9 +21,15 @@ export const useUser = create<UserState>()(
         streak: 0,
         highScore: 0,
         allTimePoints: 0,
-        uuid: "",
+        uuid: '',
       },
-      setUser: (user) => set({ user }),
+      setUser: (user) =>
+        set({
+          user: {
+            ...user,
+            hasPin: !!user.pinHash,// or set this from server directly
+          },
+        }),
     }),
     {
       name: 'quizmint-user',

@@ -92,6 +92,7 @@ export const useHint = async (req, res) => {
   await user.save();
   res.json({ coins: user.coins });
 };
+
 export const saveSession = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
@@ -99,7 +100,7 @@ export const saveSession = async (req, res) => {
 
     const today = new Date();
 
-    // 🔁 Daily session reset
+    // 🔄 Reset daily session counter if it's a new day
     if (user.lastSessionDate?.toDateString() !== today.toDateString()) {
       user.dailySessions = 0;
       user.lastSessionDate = today;
@@ -113,19 +114,21 @@ export const saveSession = async (req, res) => {
 
     const { score, total, category, usedHints } = req.body;
 
-    // 🎯 Points and Coins
-    const pointsEarned = score * 100;
-    const bonus = score === total ? 1000 : 0;
+    // 🧠 Point System (1 point per correct + 10 bonus for perfect session)
+    const pointsEarned = score;
+    const bonus = score === total ? 10 : 0;
     const totalPoints = pointsEarned + bonus;
-    const earnedCoins = score * 10;
 
-    user.coins += earnedCoins;
+    // ⛔️ Coins are NOT awarded per question
+    // Coins are rewarded from streaks or purchases only
+
+    // ➕ Update user ranking stats
     user.allTimePoints = (user.allTimePoints || 0) + totalPoints;
     user.weeklyPoints = (user.weeklyPoints || 0) + totalPoints;
     user.monthlyPoints = (user.monthlyPoints || 0) + totalPoints;
     user.dailySessions += 1;
 
-    // 🔁 Weekly / Monthly reset
+    // 🔄 Reset weekly/monthly if needed
     const now = new Date();
     if (isNewWeek(user.lastWeeklyUpdate, now)) {
       user.weeklyPoints = totalPoints;
@@ -136,7 +139,7 @@ export const saveSession = async (req, res) => {
       user.lastMonthlyUpdate = now;
     }
 
-    // 🧠 Update stats for tier
+    // 📊 Performance stats
     user.totalGames = (user.totalGames || 0) + 1;
     user.totalCorrect = (user.totalCorrect || 0) + score;
 
@@ -145,37 +148,32 @@ export const saveSession = async (req, res) => {
       user.correctWithoutHints = (user.correctWithoutHints || 0) + score;
     }
 
-    // 🧮 Calculate Win Rate
-    const winRate = user.totalCorrect / (user.totalGames || 1);
-    const winRateWithoutHints =
+    // 📈 Win Rate Calculations
+    user.winRate = user.totalCorrect / (user.totalGames || 1);
+    user.winRateWithoutHints =
       user.correctWithoutHints / (user.gamesWithoutHints || 1);
 
-    user.winRate = winRate;
-    user.winRateWithoutHints = winRateWithoutHints;
-
-    // 🏆 Tier Calculation
+    // 🏅 Tier system
     const previousTier = user.tier?.level || 0;
     const { tier, emoji, color } = getUserTier({
       allTimePoints: user.allTimePoints,
-      winRate,
-      winRateWithoutHints,
+      winRate: user.winRate,
+      winRateWithoutHints: user.winRateWithoutHints,
     });
     user.tier = { level: tier, emoji, color };
 
-    // 🎁 Check Mystery Box eligibility
-    // (1) Win streak reward
+    // 🎁 Streak-based reward logic
     if (score === total) {
       user.streak = (user.streak || 0) + 1;
       if (user.streak === 10) {
-        await assignMysteryBox(user._id, 'small');
+        await assignMysteryBox(user._id, 'small'); // 🔓 Small box after 10 streak
       }
     } else {
-      user.streak = 0; // Reset if not perfect
+      user.streak = 0;
     }
 
-    // (2) Tier increase check
+    // 🎁 Tier change-based box rewards
     const hoursSinceTierUp = (now - new Date(user.lastTierUp || 0)) / 36e5;
-
     const tierDiff = tier - (user.lastTierLevel || 0);
     if (tierDiff === 1 && hoursSinceTierUp <= 48) {
       await assignMysteryBox(user._id, 'medium');
@@ -189,7 +187,7 @@ export const saveSession = async (req, res) => {
 
     await user.save();
 
-    // 💾 Save session log
+    // 📝 Save session log
     await Session.create({
       userId: user._id,
       category,
@@ -204,7 +202,7 @@ export const saveSession = async (req, res) => {
       totalPoints,
       updatedPoints: user.allTimePoints,
       tier: user.tier,
-      coins: user.coins,
+      coins: user.coins, // coins stay unchanged unless streak/purchase rewards occur elsewhere
     });
   } catch (err) {
     console.error(err);

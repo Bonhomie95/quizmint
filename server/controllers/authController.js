@@ -1,30 +1,41 @@
 const { v4: uuidv4 } = require('uuid');
+const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const User = require('../models/User');
+
 exports.registerNewUser = async (req, res) => {
-  const uuid = uuidv4();
-  const { ref } = req.query;
+  try {
+    const uuid = uuidv4();
+    const { ref } = req.query;
 
-  const user = await User.create({
-    uuid,
-    referredBy: ref || null,
-  });
+    const user = await User.create({
+      uuid,
+      referredBy: ref || null,
+    });
 
-  // If referral is valid and not self
-  if (ref && ref !== uuid) {
-    const referrer = await User.findOne({ uuid: ref });
-    if (referrer) {
-      referrer.coins += 200; // 🎁 reward for referrer
-      await referrer.save();
+    // 🎁 Apply referral logic
+    if (ref && ref !== uuid) {
+      const referrer = await User.findOne({ uuid: ref });
+      if (referrer) {
+        referrer.coins += 200;
+        await referrer.save();
+      }
+      user.coins += 100;
+      user.hasClaimedReferral = true;
+      await user.save();
     }
-    user.coins += 100; // 🎁 reward for invitee
-    user.hasClaimedReferral = true;
-    await user.save();
+
+    // 🔐 Issue JWT (encode UUID)
+    const token = jwt.sign({ uuid: user.uuid }, process.env.JWT_SECRET, {
+      expiresIn: '30d', // Optional: adjust token lifespan
+    });
+
+    return res.json({ token, user });
+  } catch (err) {
+    console.error('Register error:', err);
+    return res.status(500).json({ message: 'Registration failed' });
   }
-
-  res.json({ token: uuid, user });
 };
-
 
 // 🔒 Set or update PIN securely
 exports.setPin = async (req, res) => {
@@ -69,4 +80,9 @@ exports.updateWallet = async (req, res) => {
     console.error('Update Wallet Error:', err);
     res.status(500).json({ message: 'Failed to update wallet' });
   }
+};
+
+exports.getMe = async (req, res) => {
+  const user = await User.findById(req.user.id).select('-pinHash -mnemonicHash');
+  res.json(user);
 };
